@@ -1,0 +1,164 @@
+[tool.poetry]
+name = "air-temperature-forecasting"
+version = "0.1.0"
+description = "Comprehensive time-series forecasting models for air temperature prediction with focus on accuracy, robustness, interpretability, and reproducibility"
+authors = ["Vasantharajan Pandian <vasanth@example.com>"]
+readme = "README.md"
+package-mode = false
+keywords = ["time-series", "forecasting", "temperature", "machine-learning", "arima", "lstm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+# Core Data Science Libraries
+pandas = ">=1.5.0"
+numpy = ">=1.21.0"
+scipy = ">=1.9.0"
+
+# Visualization
+matplotlib = ">=3.5.0"
+seaborn = ">=0.11.0"
+plotly = ">=5.0.0"
+
+# Machine Learning
+scikit-learn = ">=1.1.0"
+xgboost = ">=1.6.0"
+
+# Time Series Analysis
+statsmodels = ">=0.13.0"
+
+# Deep Learning (Optional)
+tensorflow = {version = ">=2.8.0", optional = true}
+keras = {version = ">=2.8.0", optional = true}
+
+# Jupyter Environment
+jupyter = ">=1.0.0"
+ipykernel = ">=6.0.0"
+ipywidgets = ">=7.6.0"
+notebook = ">=6.4.0"
+
+# Utilities
+tqdm = ">=4.60.0"
+
+[tool.poetry.group.dev.dependencies]
+# Development Tools
+black = ">=22.0.0"
+flake8 = ">=4.0.0"
+pytest = ">=7.0.0"
+pytest-cov = ">=4.0.0"
+mypy = ">=1.0.0"
+isort = ">=5.12.0"
+pre-commit = ">=3.0.0"
+
+# Documentation
+sphinx = ">=5.0.0"
+sphinx-rtd-theme = ">=1.2.0"
+
+# Jupyter Extensions
+jupyterlab = ">=3.6.0"
+nbformat = ">=5.7.0"
+nbconvert = ">=7.0.0"
+
+[tool.poetry.extras]
+deep-learning = ["tensorflow", "keras"]
+all = ["tensorflow", "keras"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Black configuration
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "numpy.*",
+    "matplotlib.*",
+    "seaborn.*",
+    "plotly.*",
+    "sklearn.*",
+    "xgboost.*",
+    "statsmodels.*",
+    "tensorflow.*",
+    "keras.*"
+]
+ignore_missing_imports = true
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

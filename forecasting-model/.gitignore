@@ -1,0 +1,70 @@
+# Poetry and dependency management
+poetry.lock
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Data files (uncomment if you want to ignore data)
+# data/
+# *.csv
+# *.parquet
+# *.h5
+
+# Model artifacts
+models/*.pkl
+models/*.joblib
+models/*.h5
+models/*.pb
+
+# Results and outputs
+results/*.png
+results/*.pdf
+results/*.csv
+results/*.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
