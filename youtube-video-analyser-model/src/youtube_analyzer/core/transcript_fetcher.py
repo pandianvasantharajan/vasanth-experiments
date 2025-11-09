@@ -73,7 +73,8 @@ class TranscriptFetcher:
             Dictionary of available transcripts
         """
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            api = YouTubeTranscriptApi()
+            transcript_list = api.list(video_id)
             available = {}
             
             for transcript in transcript_list:
@@ -107,12 +108,14 @@ class TranscriptFetcher:
             Exception: If transcript cannot be fetched
         """
         try:
-            # Try to get transcript in preferred languages
+            # Create an instance and try to get transcript in preferred languages
+            api = YouTubeTranscriptApi()
+            
             if language_codes:
                 transcript_data = None
                 for lang_code in language_codes:
                     try:
-                        transcript_data = YouTubeTranscriptApi.get_transcript(
+                        transcript_data = api.fetch(
                             video_id, languages=[lang_code]
                         )
                         break
@@ -121,17 +124,17 @@ class TranscriptFetcher:
                 
                 if transcript_data is None:
                     # Fallback to any available transcript
-                    transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
+                    transcript_data = api.fetch(video_id)
             else:
-                transcript_data = YouTubeTranscriptApi.get_transcript(video_id)
+                transcript_data = api.fetch(video_id)
             
             # Convert to TranscriptSegment objects
             segments = []
             for segment in transcript_data:
                 segments.append(TranscriptSegment(
-                    text=segment['text'].strip(),
-                    start=segment['start'],
-                    duration=segment['duration']
+                    text=segment.text.strip(),
+                    start=segment.start,
+                    duration=segment.duration
                 ))
             
             return segments
@@ -196,6 +199,24 @@ class TranscriptFetcher:
             pass
         
         return metadata
+    
+    def fetch_transcript(
+        self, 
+        url: str, 
+        language_codes: Optional[List[str]] = None
+    ) -> List[TranscriptSegment]:
+        """
+        Fetch transcript for a YouTube video (convenience method).
+        
+        Args:
+            url: YouTube URL or video ID
+            language_codes: Preferred language codes
+            
+        Returns:
+            List of transcript segments
+        """
+        video_id = self.extract_video_id(url)
+        return self.fetch_transcript_segments(video_id, language_codes)
     
     def fetch_video_data(
         self, 

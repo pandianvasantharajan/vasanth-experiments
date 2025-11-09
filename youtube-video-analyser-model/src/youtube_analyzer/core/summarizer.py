@@ -48,16 +48,16 @@ class BaseSummarizer(ABC):
 class GroqSummarizer(BaseSummarizer):
     """Summarizer using Groq API."""
     
-    def __init__(self, api_key: str, model: str = "llama3-8b-8192"):
+    def __init__(self, api_key: str, model: str = "llama-3.3-70b-versatile"):
         """
         Initialize Groq summarizer.
         
         Args:
             api_key: Groq API key
-            model: Model name to use
+            model: Groq model name (default: llama-3.3-70b-versatile)
         """
-        if Groq is None:
-            raise ImportError("groq is required. Install with: pip install groq")
+        if not api_key:
+            raise ValueError("Groq API key is required")
         
         self.client = Groq(api_key=api_key)
         self.model = model
@@ -366,7 +366,7 @@ class SummarizerFactory:
             api_key = kwargs.get("groq_api_key") or os.getenv("GROQ_API_KEY")
             if not api_key:
                 raise ValueError("Groq API key is required")
-            return GroqSummarizer(api_key, kwargs.get("model", "llama3-8b-8192"))
+            return GroqSummarizer(api_key, kwargs.get("model", "llama-3.3-70b-versatile"))
         
         elif provider == "openai":
             api_key = kwargs.get("openai_api_key") or os.getenv("OPENAI_API_KEY")

@@ -1,11 +1,12 @@
 # Model Service
 
-A unified FastAPI service that serves both temperature forecasting and object detection models from pickle files.
+A unified FastAPI service that serves temperature forecasting, object detection, and YouTube video analysis models.
 
 ## Features
 
 - **Temperature Forecasting**: Predict temperature based on temporal features and lag values
 - **Object Detection**: Detect objects in uploaded images using YOLOv8-based model
+- **YouTube Video Analysis**: Analyze YouTube videos with AI-powered summarization using RAG pipeline
 - **Health Monitoring**: Service health checks and model status endpoints
 - **CORS Support**: Cross-origin requests enabled for web applications
 - **API Documentation**: Auto-generated OpenAPI/Swagger documentation
@@ -19,6 +20,7 @@ A unified FastAPI service that serves both temperature forecasting and object de
 - `GET /models` - Model information and status
 - `POST /predict/temperature` - Temperature prediction
 - `POST /detect/objects` - Object detection in images
+- `POST /analyze/youtube` - YouTube video analysis and summarization
 
 ### Documentation
 
@@ -45,9 +47,18 @@ A unified FastAPI service that serves both temperature forecasting and object de
    ```
 
 3. **Ensure models are available**:
-   Make sure the pickle model files exist in `../shared-models/`:
+   Make sure the model files exist in `../shared-models/`:
    - `forecasting_model.pkl`
    - `object_detection_model.pkl`
+   - `youtube_analyzer_standalone.py`
+   - `youtube_analyzer_metadata.json`
+
+4. **Configure API Keys (for YouTube analysis)**:
+   ```bash
+   export GROQ_API_KEY="your_groq_api_key"
+   # or
+   export OPENAI_API_KEY="your_openai_api_key"
+   ```
    - `model_registry.json`
 
 ## Usage
@@ -125,6 +136,39 @@ Response:
 }
 ```
 
+#### YouTube Video Analysis
+
+```bash
+curl -X POST "http://localhost:8000/analyze/youtube" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "query": "What are the main topics discussed?",
+    "max_chunks": 8
+  }'
+```
+
+Response:
+```json
+{
+  "summary": "This video discusses various technical concepts including...",
+  "key_points": [
+    "The main topic focuses on technical implementation",
+    "Key insights about the approach discussed",
+    "Important considerations for implementation"
+  ],
+  "video_id": "dQw4w9WgXcQ",
+  "duration": 212.0,
+  "chunk_count": 15,
+  "analysis_timestamp": "2024-11-05T14:30:00",
+  "context_chunks": [
+    "Relevant content segment 1...",
+    "Relevant content segment 2...",
+    "Relevant content segment 3..."
+  ]
+}
+```
+
 #### Health Check
 
 ```bash
@@ -135,10 +179,11 @@ Response:
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-01-15T14:30:00",
+  "timestamp": "2024-11-05T14:30:00",
   "models": {
     "forecasting": "available",
-    "object_detection": "available"
+    "object_detection": "available",
+    "youtube_analyzer": "available"
   }
 }
 ```
@@ -164,6 +209,23 @@ Response:
 - **Classes**: 80 COCO classes (person, car, chair, etc.)
 - **Input**: Image files (JPEG, PNG)
 - **Output**: Bounding boxes, class names, confidence scores
+
+### YouTube Video Analyzer
+
+- **Algorithm**: RAG Pipeline (Retrieval-Augmented Generation)
+- **Components**: 
+  - Transcript extraction using YouTube Transcript API
+  - Text chunking with LangChain RecursiveCharacterTextSplitter
+  - Vector embeddings with SentenceTransformers (all-MiniLM-L6-v2)
+  - Vector storage and retrieval with ChromaDB
+  - AI summarization with Groq/OpenAI LLMs
+- **Input**: YouTube URL and optional query
+- **Output**: Summary, key points, metadata, and relevant content chunks
+- **Features**:
+  - Supports any YouTube video with available transcripts
+  - Focused analysis with custom queries
+  - Configurable context chunk limits
+  - Multi-language transcript support (when available)
 
 ## Development
 

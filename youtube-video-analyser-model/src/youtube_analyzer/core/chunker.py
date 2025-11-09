@@ -7,9 +7,13 @@ from typing import List, Optional, Literal
 from abc import ABC, abstractmethod
 
 try:
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 except ImportError:
-    RecursiveCharacterTextSplitter = None
+    try:
+        # Fallback to old import path for backward compatibility
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+    except ImportError:
+        RecursiveCharacterTextSplitter = None
 
 try:
     import spacy

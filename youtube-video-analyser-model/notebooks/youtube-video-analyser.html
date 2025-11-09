@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>YouTube Video Analyser - Notebook Export</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .notebook-container {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .cell {
+            margin-bottom: 20px;
+            break-inside: avoid;
+        }
+        .cell-input {
+            background: #f8f9fa;
+            border-left: 3px solid #007acc;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .cell-output {
+            background: #ffffff;
+            border-left: 3px solid #28a745;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        .markdown-cell {
+            padding: 15px 0;
+        }
+        .markdown-cell h1 {
+            color: #1a1a1a;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 10px;
+        }
+        .markdown-cell h2 {
+            color: #2a2a2a;
+            margin-top: 30px;
+        }
+        .markdown-cell h3 {
+            color: #3a3a3a;
+        }
+        .markdown-cell code {
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        .code {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        .execution-count {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #007acc;
+        }
+        .header h1 {
+            color: #007acc;
+            margin-bottom: 5px;
+        }
+        .header .date {
+            color: #666;
+            font-size: 14px;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .notebook-container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .cell {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notebook-container">
+        <div class="header">
+            <h1>YouTube Video Analyser</h1>
+            <p class="date">Exported on November 09, 2025 at 06:29 PM</p>
+        </div>
+<div class="cell markdown-cell">
+<p><h1>YouTube Video Analyser - Complete Demonstration</h1></h2></h3><br></h2></h3><br>This notebook demonstrates all components of the **youtube-video-analyser** RAG pipeline project.</h2></h3><br></h2></h3><br>#<h1>Components Covered:</h2></h3><br>1. **TranscriptFetcher** - YouTube transcript extraction</h2></h3><br>2. **Chunker** - Semantic text chunking strategies</h2></h3><br>3. **Embedder** - Vector embedding generation</h2></h3><br>4. **VectorRetriever** - ChromaDB storage and retrieval</h2></h3><br>5. **Summarizer** - LLM-based summarization</h2></h3><br>6. **YouTubeAnalyzer** - Main orchestrator (end-to-end pipeline)</h2></h3><br></h2></h3><br>---</p>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>Setup and Installation</h1></h2></h3><br></h2></h3><br>First, ensure all dependencies are installed.</h2></h3><br></h2></h3><br>**⚠️ Important:** After running the installation cell below, **restart the kernel** (Kernel → Restart Kernel) before proceeding to the next cells.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [14]:</div>
+<div class="cell-input code">
+# Install required packages (if not already installed)
+# Run this cell first if you're in a fresh environment
+!pip install youtube-transcript-api langchain langchain-text-splitters sentence-transformers chromadb groq openai python-dotenv spacy transformers torch
+</div>
+<div class="cell-output">
+Requirement already satisfied: youtube-transcript-api in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (1.2.3)
+Requirement already satisfied: langchain in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (1.0.3)
+Requirement already satisfied: langchain-text-splitters in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (1.0.0)
+Requirement already satisfied: sentence-transformers in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (5.1.2)
+Requirement already satisfied: chromadb in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (1.3.0)
+Requirement already satisfied: groq in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (0.33.0)
+Requirement already satisfied: openai in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (2.6.1)
+Requirement already satisfied: python-dotenv in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (1.2.1)
+Requirement already satisfied: spacy in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (3.8.8)
+Requirement already satisfied: transformers in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (4.57.1)
+Requirement already satisfied: torch in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (2.9.0)
+Requirement already satisfied: defusedxml&lt;0.8.0,&gt;=0.7.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from youtube-transcript-api) (0.7.1)
+Requirement already satisfied: requests in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from youtube-transcript-api) (2.32.5)
+Requirement already satisfied: langchain-core&lt;2.0.0,&gt;=1.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain) (1.0.2)
+Requirement already satisfied: langgraph&lt;1.1.0,&gt;=1.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain) (1.0.2)
+Requirement already satisfied: pydantic&lt;3.0.0,&gt;=2.7.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain) (2.12.3)
+Requirement already satisfied: jsonpatch&lt;2.0.0,&gt;=1.33.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (1.33)
+Requirement already satisfied: langsmith&lt;1.0.0,&gt;=0.3.45 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (0.4.39)
+Requirement already satisfied: packaging&lt;26.0.0,&gt;=23.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (25.0)
+Requirement already satisfied: pyyaml&lt;7.0.0,&gt;=5.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (6.0.3)
+Requirement already satisfied: tenacity!=8.4.0,&lt;10.0.0,&gt;=8.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (9.1.2)
+Requirement already satisfied: typing-extensions&lt;5.0.0,&gt;=4.7.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (4.15.0)
+Requirement already satisfied: jsonpointer&gt;=1.9 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonpatch&lt;2.0.0,&gt;=1.33.0-&gt;langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (3.0.0)
+Requirement already satisfied: langgraph-checkpoint&lt;4.0.0,&gt;=2.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.0.0)
+Requirement already satisfied: langgraph-prebuilt&lt;1.1.0,&gt;=1.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (1.0.2)
+Requirement already satisfied: langgraph-sdk&lt;0.3.0,&gt;=0.2.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (0.2.9)
+Requirement already satisfied: xxhash&gt;=3.5.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.6.0)
+Requirement already satisfied: ormsgpack&gt;=1.10.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph-checkpoint&lt;4.0.0,&gt;=2.1.0-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (1.11.0)
+Requirement already satisfied: httpx&gt;=0.25.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (0.28.1)
+Requirement already satisfied: orjson&gt;=3.10.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.11.4)
+Requirement already satisfied: requests-toolbelt&gt;=1.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langsmith&lt;1.0.0,&gt;=0.3.45-&gt;langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (1.0.0)
+Requirement already satisfied: zstandard&gt;=0.23.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langsmith&lt;1.0.0,&gt;=0.3.45-&gt;langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (0.25.0)
+Requirement already satisfied: anyio in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (4.11.0)
+Requirement already satisfied: certifi in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (2025.10.5)
+Requirement already satisfied: httpcore==1.* in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (1.0.9)
+Requirement already satisfied: idna in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.11)
+Requirement already satisfied: h11&gt;=0.16 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpcore==1.*-&gt;httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (0.16.0)
+Requirement already satisfied: annotated-types&gt;=0.6.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (2.41.4)
+Requirement already satisfied: typing-inspection&gt;=0.4.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (0.4.2)
+Requirement already satisfied: tqdm in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (4.67.1)
+Requirement already satisfied: scikit-learn in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (1.7.2)
+Requirement already satisfied: scipy in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (1.16.2)
+Requirement already satisfied: huggingface-hub&gt;=0.20.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (0.36.0)
+Requirement already satisfied: Pillow in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (12.0.0)
+Requirement already satisfied: filelock in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (3.20.0)
+Requirement already satisfied: numpy&gt;=1.17 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (2.2.6)
+Requirement already satisfied: regex!=2019.12.17 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (2025.10.23)
+Requirement already satisfied: tokenizers&lt;=0.23.0,&gt;=0.22.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (0.22.1)
+Requirement already satisfied: safetensors&gt;=0.4.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (0.6.2)
+Requirement already satisfied: fsspec&gt;=2023.5.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers) (2025.9.0)
+Requirement already satisfied: hf-xet&lt;2.0.0,&gt;=1.1.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers) (1.2.0)
+Requirement already satisfied: build&gt;=1.0.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.3.0)
+Requirement already satisfied: pybase64&gt;=1.4.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.4.2)
+Requirement already satisfied: uvicorn&gt;=0.18.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.38.0)
+Requirement already satisfied: posthog&lt;6.0.0,&gt;=2.4.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.4.0)
+Requirement already satisfied: onnxruntime&gt;=1.14.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.23.2)
+Requirement already satisfied: opentelemetry-api&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-sdk&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: pypika&gt;=0.48.9 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (0.48.9)
+Requirement already satisfied: overrides&gt;=7.3.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (7.7.0)
+Requirement already satisfied: importlib-resources in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (6.5.2)
+Requirement already satisfied: grpcio&gt;=1.58.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.76.0)
+Requirement already satisfied: bcrypt&gt;=4.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.0.0)
+Requirement already satisfied: typer&gt;=0.9.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (0.20.0)
+Requirement already satisfied: kubernetes&gt;=28.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (34.1.0)
+Requirement already satisfied: mmh3&gt;=4.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.2.0)
+Requirement already satisfied: rich&gt;=10.11.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (14.2.0)
+Requirement already satisfied: jsonschema&gt;=4.19.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (4.25.1)
+Requirement already satisfied: six&gt;=1.5 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (1.17.0)
+Requirement already satisfied: python-dateutil&gt;=2.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (2.9.0.post0)
+Requirement already satisfied: backoff&gt;=1.10.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (2.2.1)
+Requirement already satisfied: distro&gt;=1.5.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (1.9.0)
+Requirement already satisfied: charset_normalizer&lt;4,&gt;=2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-&gt;youtube-transcript-api) (3.4.4)
+Requirement already satisfied: urllib3&lt;3,&gt;=1.21.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-&gt;youtube-transcript-api) (2.3.0)
+Requirement already satisfied: sniffio in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from groq) (1.3.1)
+Requirement already satisfied: jiter&lt;1,&gt;=0.10.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from openai) (0.11.1)
+Requirement already satisfied: spacy-legacy&lt;3.1.0,&gt;=3.0.11 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.0.12)
+Requirement already satisfied: spacy-loggers&lt;2.0.0,&gt;=1.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.0.5)
+Requirement already satisfied: httpx&gt;=0.25.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (0.28.1)
+Requirement already satisfied: orjson&gt;=3.10.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.11.4)
+Requirement already satisfied: requests-toolbelt&gt;=1.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langsmith&lt;1.0.0,&gt;=0.3.45-&gt;langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (1.0.0)
+Requirement already satisfied: zstandard&gt;=0.23.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from langsmith&lt;1.0.0,&gt;=0.3.45-&gt;langchain-core&lt;2.0.0,&gt;=1.0.0-&gt;langchain) (0.25.0)
+Requirement already satisfied: anyio in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (4.11.0)
+Requirement already satisfied: certifi in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (2025.10.5)
+Requirement already satisfied: httpcore==1.* in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (1.0.9)
+Requirement already satisfied: idna in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (3.11)
+Requirement already satisfied: h11&gt;=0.16 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from httpcore==1.*-&gt;httpx&gt;=0.25.2-&gt;langgraph-sdk&lt;0.3.0,&gt;=0.2.2-&gt;langgraph&lt;1.1.0,&gt;=1.0.2-&gt;langchain) (0.16.0)
+Requirement already satisfied: annotated-types&gt;=0.6.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (2.41.4)
+Requirement already satisfied: typing-inspection&gt;=0.4.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from pydantic&lt;3.0.0,&gt;=2.7.4-&gt;langchain) (0.4.2)
+Requirement already satisfied: tqdm in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (4.67.1)
+Requirement already satisfied: scikit-learn in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (1.7.2)
+Requirement already satisfied: scipy in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (1.16.2)
+Requirement already satisfied: huggingface-hub&gt;=0.20.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (0.36.0)
+Requirement already satisfied: Pillow in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sentence-transformers) (12.0.0)
+Requirement already satisfied: filelock in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (3.20.0)
+Requirement already satisfied: numpy&gt;=1.17 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (2.2.6)
+Requirement already satisfied: regex!=2019.12.17 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (2025.10.23)
+Requirement already satisfied: tokenizers&lt;=0.23.0,&gt;=0.22.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (0.22.1)
+Requirement already satisfied: safetensors&gt;=0.4.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from transformers) (0.6.2)
+Requirement already satisfied: fsspec&gt;=2023.5.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers) (2025.9.0)
+Requirement already satisfied: hf-xet&lt;2.0.0,&gt;=1.1.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from huggingface-hub&gt;=0.20.0-&gt;sentence-transformers) (1.2.0)
+Requirement already satisfied: build&gt;=1.0.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.3.0)
+Requirement already satisfied: pybase64&gt;=1.4.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.4.2)
+Requirement already satisfied: uvicorn&gt;=0.18.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.38.0)
+Requirement already satisfied: posthog&lt;6.0.0,&gt;=2.4.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.4.0)
+Requirement already satisfied: onnxruntime&gt;=1.14.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.23.2)
+Requirement already satisfied: opentelemetry-api&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-sdk&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.38.0)
+Requirement already satisfied: pypika&gt;=0.48.9 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (0.48.9)
+Requirement already satisfied: overrides&gt;=7.3.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (7.7.0)
+Requirement already satisfied: importlib-resources in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (6.5.2)
+Requirement already satisfied: grpcio&gt;=1.58.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (1.76.0)
+Requirement already satisfied: bcrypt&gt;=4.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.0.0)
+Requirement already satisfied: typer&gt;=0.9.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (0.20.0)
+Requirement already satisfied: kubernetes&gt;=28.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (34.1.0)
+Requirement already satisfied: mmh3&gt;=4.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (5.2.0)
+Requirement already satisfied: rich&gt;=10.11.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (14.2.0)
+Requirement already satisfied: jsonschema&gt;=4.19.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from chromadb) (4.25.1)
+Requirement already satisfied: six&gt;=1.5 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (1.17.0)
+Requirement already satisfied: python-dateutil&gt;=2.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (2.9.0.post0)
+Requirement already satisfied: backoff&gt;=1.10.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (2.2.1)
+Requirement already satisfied: distro&gt;=1.5.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from posthog&lt;6.0.0,&gt;=2.4.0-&gt;chromadb) (1.9.0)
+Requirement already satisfied: charset_normalizer&lt;4,&gt;=2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-&gt;youtube-transcript-api) (3.4.4)
+Requirement already satisfied: urllib3&lt;3,&gt;=1.21.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-&gt;youtube-transcript-api) (2.3.0)
+Requirement already satisfied: sniffio in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from groq) (1.3.1)
+Requirement already satisfied: jiter&lt;1,&gt;=0.10.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from openai) (0.11.1)
+Requirement already satisfied: spacy-legacy&lt;3.1.0,&gt;=3.0.11 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.0.12)
+Requirement already satisfied: spacy-loggers&lt;2.0.0,&gt;=1.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.0.5)
+Requirement already satisfied: murmurhash&lt;1.1.0,&gt;=0.28.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.0.13)
+Requirement already satisfied: cymem&lt;2.1.0,&gt;=2.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.0.11)
+Requirement already satisfied: preshed&lt;3.1.0,&gt;=3.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.0.10)
+Requirement already satisfied: thinc&lt;8.4.0,&gt;=8.3.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (8.3.8)
+Requirement already satisfied: wasabi&lt;1.2.0,&gt;=0.9.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.1.3)
+Requirement already satisfied: srsly&lt;3.0.0,&gt;=2.4.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.5.1)
+Requirement already satisfied: catalogue&lt;2.1.0,&gt;=2.0.6 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.0.10)
+Requirement already satisfied: weasel&lt;0.5.0,&gt;=0.4.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (0.4.2)
+Requirement already satisfied: typer-slim&lt;1.0.0,&gt;=0.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (0.20.0)
+Requirement already satisfied: jinja2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.1.6)
+Requirement already satisfied: setuptools in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (80.9.0)
+Requirement already satisfied: blis&lt;1.4.0,&gt;=1.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from thinc&lt;8.4.0,&gt;=8.3.4-&gt;spacy) (1.3.0)
+Requirement already satisfied: confection&lt;1.0.0,&gt;=0.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from thinc&lt;8.4.0,&gt;=8.3.4-&gt;spacy) (0.1.5)
+Requirement already satisfied: click&gt;=8.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from typer-slim&lt;1.0.0,&gt;=0.3.0-&gt;spacy) (8.3.0)
+Requirement already satisfied: cloudpathlib&lt;1.0.0,&gt;=0.7.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (0.23.0)
+Requirement already satisfied: smart-open&lt;8.0.0,&gt;=5.2.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (7.5.0)
+Requirement already satisfied: wrapt in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from smart-open&lt;8.0.0,&gt;=5.2.1-&gt;weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (2.0.1)
+Requirement already satisfied: sympy&gt;=1.13.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from torch) (1.14.0)
+Requirement already satisfied: networkx&gt;=2.5.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from torch) (3.5)
+Requirement already satisfied: pyproject_hooks in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from build&gt;=1.0.3-&gt;chromadb) (1.2.0)
+Requirement already satisfied: attrs&gt;=22.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (25.4.0)
+Requirement already satisfied: jsonschema-specifications&gt;=2023.03.6 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (2025.9.1)
+Requirement already satisfied: referencing&gt;=0.28.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (0.37.0)
+Requirement already satisfied: rpds-py&gt;=0.7.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (0.28.0)
+Requirement already satisfied: google-auth&gt;=1.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (2.42.1)
+Requirement already satisfied: websocket-client!=0.40.0,!=0.41.*,!=0.42.*,&gt;=0.32.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (1.9.0)
+Requirement already satisfied: requests-oauthlib in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (2.0.0)
+Requirement already satisfied: durationpy&gt;=0.7 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (0.10)
+Requirement already satisfied: cachetools&lt;7.0,&gt;=2.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (6.2.1)
+Requirement already satisfied: pyasn1-modules&gt;=0.2.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (0.4.2)
+Requirement already satisfied: rsa&lt;5,&gt;=3.1.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (4.9.1)
+Requirement already satisfied: pyasn1&gt;=0.1.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rsa&lt;5,&gt;=3.1.4-&gt;google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (0.6.1)
+Requirement already satisfied: murmurhash&lt;1.1.0,&gt;=0.28.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.0.13)
+Requirement already satisfied: cymem&lt;2.1.0,&gt;=2.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.0.11)
+Requirement already satisfied: preshed&lt;3.1.0,&gt;=3.0.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.0.10)
+Requirement already satisfied: thinc&lt;8.4.0,&gt;=8.3.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (8.3.8)
+Requirement already satisfied: wasabi&lt;1.2.0,&gt;=0.9.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (1.1.3)
+Requirement already satisfied: srsly&lt;3.0.0,&gt;=2.4.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.5.1)
+Requirement already satisfied: catalogue&lt;2.1.0,&gt;=2.0.6 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (2.0.10)
+Requirement already satisfied: weasel&lt;0.5.0,&gt;=0.4.2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (0.4.2)
+Requirement already satisfied: typer-slim&lt;1.0.0,&gt;=0.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (0.20.0)
+Requirement already satisfied: jinja2 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (3.1.6)
+Requirement already satisfied: setuptools in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from spacy) (80.9.0)
+Requirement already satisfied: blis&lt;1.4.0,&gt;=1.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from thinc&lt;8.4.0,&gt;=8.3.4-&gt;spacy) (1.3.0)
+Requirement already satisfied: confection&lt;1.0.0,&gt;=0.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from thinc&lt;8.4.0,&gt;=8.3.4-&gt;spacy) (0.1.5)
+Requirement already satisfied: click&gt;=8.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from typer-slim&lt;1.0.0,&gt;=0.3.0-&gt;spacy) (8.3.0)
+Requirement already satisfied: cloudpathlib&lt;1.0.0,&gt;=0.7.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (0.23.0)
+Requirement already satisfied: smart-open&lt;8.0.0,&gt;=5.2.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (7.5.0)
+Requirement already satisfied: wrapt in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from smart-open&lt;8.0.0,&gt;=5.2.1-&gt;weasel&lt;0.5.0,&gt;=0.4.2-&gt;spacy) (2.0.1)
+Requirement already satisfied: sympy&gt;=1.13.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from torch) (1.14.0)
+Requirement already satisfied: networkx&gt;=2.5.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from torch) (3.5)
+Requirement already satisfied: pyproject_hooks in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from build&gt;=1.0.3-&gt;chromadb) (1.2.0)
+Requirement already satisfied: attrs&gt;=22.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (25.4.0)
+Requirement already satisfied: jsonschema-specifications&gt;=2023.03.6 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (2025.9.1)
+Requirement already satisfied: referencing&gt;=0.28.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (0.37.0)
+Requirement already satisfied: rpds-py&gt;=0.7.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jsonschema&gt;=4.19.0-&gt;chromadb) (0.28.0)
+Requirement already satisfied: google-auth&gt;=1.0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (2.42.1)
+Requirement already satisfied: websocket-client!=0.40.0,!=0.41.*,!=0.42.*,&gt;=0.32.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (1.9.0)
+Requirement already satisfied: requests-oauthlib in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (2.0.0)
+Requirement already satisfied: durationpy&gt;=0.7 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from kubernetes&gt;=28.1.0-&gt;chromadb) (0.10)
+Requirement already satisfied: cachetools&lt;7.0,&gt;=2.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (6.2.1)
+Requirement already satisfied: pyasn1-modules&gt;=0.2.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (0.4.2)
+Requirement already satisfied: rsa&lt;5,&gt;=3.1.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (4.9.1)
+Requirement already satisfied: pyasn1&gt;=0.1.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rsa&lt;5,&gt;=3.1.4-&gt;google-auth&gt;=1.0.1-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (0.6.1)
+Requirement already satisfied: coloredlogs in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (15.0.1)
+Requirement already satisfied: flatbuffers in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (25.9.23)
+Requirement already satisfied: protobuf in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (6.33.0)
+Requirement already satisfied: importlib-metadata&lt;8.8.0,&gt;=6.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-api&gt;=1.2.0-&gt;chromadb) (8.7.0)
+Requirement already satisfied: zipp&gt;=3.20 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from importlib-metadata&lt;8.8.0,&gt;=6.0-&gt;opentelemetry-api&gt;=1.2.0-&gt;chromadb) (3.23.0)
+Requirement already satisfied: googleapis-common-protos~=1.57 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.71.0)
+Requirement already satisfied: opentelemetry-exporter-otlp-proto-common==1.38.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-proto==1.38.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-semantic-conventions==0.59b0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-sdk&gt;=1.2.0-&gt;chromadb) (0.59b0)
+Requirement already satisfied: markdown-it-py&gt;=2.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rich&gt;=10.11.0-&gt;chromadb) (4.0.0)
+Requirement already satisfied: pygments&lt;3.0.0,&gt;=2.13.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rich&gt;=10.11.0-&gt;chromadb) (2.19.2)
+Requirement already satisfied: mdurl~=0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from markdown-it-py&gt;=2.2.0-&gt;rich&gt;=10.11.0-&gt;chromadb) (0.1.2)
+Requirement already satisfied: mpmath&lt;1.4,&gt;=1.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sympy&gt;=1.13.3-&gt;torch) (1.3.0)
+Requirement already satisfied: shellingham&gt;=1.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from typer&gt;=0.9.0-&gt;chromadb) (1.5.4)
+Requirement already satisfied: httptools&gt;=0.6.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.7.1)
+Requirement already satisfied: uvloop&gt;=0.15.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.22.1)
+Requirement already satisfied: watchfiles&gt;=0.13 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (1.1.1)
+Requirement already satisfied: websockets&gt;=10.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (15.0.1)
+Requirement already satisfied: coloredlogs in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (15.0.1)
+Requirement already satisfied: flatbuffers in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (25.9.23)
+Requirement already satisfied: protobuf in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from onnxruntime&gt;=1.14.1-&gt;chromadb) (6.33.0)
+Requirement already satisfied: importlib-metadata&lt;8.8.0,&gt;=6.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-api&gt;=1.2.0-&gt;chromadb) (8.7.0)
+Requirement already satisfied: zipp&gt;=3.20 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from importlib-metadata&lt;8.8.0,&gt;=6.0-&gt;opentelemetry-api&gt;=1.2.0-&gt;chromadb) (3.23.0)
+Requirement already satisfied: googleapis-common-protos~=1.57 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.71.0)
+Requirement already satisfied: opentelemetry-exporter-otlp-proto-common==1.38.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-proto==1.38.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-exporter-otlp-proto-grpc&gt;=1.2.0-&gt;chromadb) (1.38.0)
+Requirement already satisfied: opentelemetry-semantic-conventions==0.59b0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from opentelemetry-sdk&gt;=1.2.0-&gt;chromadb) (0.59b0)
+Requirement already satisfied: markdown-it-py&gt;=2.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rich&gt;=10.11.0-&gt;chromadb) (4.0.0)
+Requirement already satisfied: pygments&lt;3.0.0,&gt;=2.13.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from rich&gt;=10.11.0-&gt;chromadb) (2.19.2)
+Requirement already satisfied: mdurl~=0.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from markdown-it-py&gt;=2.2.0-&gt;rich&gt;=10.11.0-&gt;chromadb) (0.1.2)
+Requirement already satisfied: mpmath&lt;1.4,&gt;=1.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from sympy&gt;=1.13.3-&gt;torch) (1.3.0)
+Requirement already satisfied: shellingham&gt;=1.3.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from typer&gt;=0.9.0-&gt;chromadb) (1.5.4)
+Requirement already satisfied: httptools&gt;=0.6.3 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.7.1)
+Requirement already satisfied: uvloop&gt;=0.15.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (0.22.1)
+Requirement already satisfied: watchfiles&gt;=0.13 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (1.1.1)
+Requirement already satisfied: websockets&gt;=10.4 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from uvicorn[standard]&gt;=0.18.3-&gt;chromadb) (15.0.1)
+Requirement already satisfied: humanfriendly&gt;=9.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from coloredlogs-&gt;onnxruntime&gt;=1.14.1-&gt;chromadb) (10.0)
+Requirement already satisfied: MarkupSafe&gt;=2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jinja2-&gt;spacy) (3.0.3)
+Requirement already satisfied: oauthlib&gt;=3.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-oauthlib-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (3.3.1)
+Requirement already satisfied: joblib&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from scikit-learn-&gt;sentence-transformers) (1.5.2)
+Requirement already satisfied: threadpoolctl&gt;=3.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from scikit-learn-&gt;sentence-transformers) (3.6.0)
+Requirement already satisfied: humanfriendly&gt;=9.1 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from coloredlogs-&gt;onnxruntime&gt;=1.14.1-&gt;chromadb) (10.0)
+Requirement already satisfied: MarkupSafe&gt;=2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from jinja2-&gt;spacy) (3.0.3)
+Requirement already satisfied: oauthlib&gt;=3.0.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from requests-oauthlib-&gt;kubernetes&gt;=28.1.0-&gt;chromadb) (3.3.1)
+Requirement already satisfied: joblib&gt;=1.2.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from scikit-learn-&gt;sentence-transformers) (1.5.2)
+Requirement already satisfied: threadpoolctl&gt;=3.1.0 in /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/.venv/lib/python3.13/site-packages (from scikit-learn-&gt;sentence-transformers) (3.6.0)
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>---</h1></h2></h3><br>**🔄 RESTART THE KERNEL NOW**</h2></h3><br></h2></h3><br>After installing packages, please restart the kernel:</h2></h3><br>- Click **"Kernel"** → **"Restart Kernel"** (or press <code>00<code> in command mode)</h2></h3><br>- Then continue with the cells below</h2></h3><br></h2></h3><br>---</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [47]:</div>
+<div class="cell-input code">
+# Import required libraries
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add the src directory to the Python path
+project_root = Path().absolute().parent
+sys.path.insert(0, str(project_root / "src"))
+
+# Load environment variables from .env file
+env_path = project_root / ".env"
+load_dotenv(env_path)
+
+print(f"Project root: {project_root}")
+print(f"Python path updated: {sys.path[0]}")
+print(f"Environment file loaded: {env_path}")
+print(f"\nAPI Keys loaded:")
+print(f"  - GROQ_API_KEY: {'✓ Set' if os.getenv('GROQ_API_KEY') else '✗ Not set'}")
+print(f"  - OPENAI_API_KEY: {'✓ Set' if os.getenv('OPENAI_API_KEY') else '✗ Not set'}")
+print(f"  - OPENROUTER_API_KEY: {'✓ Set' if os.getenv('OPENROUTER_API_KEY') else '✗ Not set'}")
+print(f"\nLLM Provider: {os.getenv('LLM_PROVIDER', 'groq')}")
+</div>
+<div class="cell-output">
+Project root: /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/youtube-video-analyser-model
+Python path updated: /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/youtube-video-analyser-model/src
+Environment file loaded: /Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/youtube-video-analyser-model/.env
+
+API Keys loaded:
+  - GROQ_API_KEY: ✓ Set
+  - OPENAI_API_KEY: ✓ Set
+  - OPENROUTER_API_KEY: ✓ Set
+
+LLM Provider: groq
+</div>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [48]:</div>
+<div class="cell-input code">
+# Force reload of modules to pick up code changes
+import importlib
+import sys
+
+# Remove cached modules
+modules_to_reload = [key for key in sys.modules.keys() if 'youtube_analyzer' in key]
+for module in modules_to_reload:
+    del sys.modules[module]
+
+print(f"Reloaded {len(modules_to_reload)} youtube_analyzer modules")
+print("Modules cleared - imports will be fresh")
+</div>
+<div class="cell-output">
+Reloaded 12 youtube_analyzer modules
+Modules cleared - imports will be fresh
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>1. TranscriptFetcher - YouTube Transcript Extraction</h1></h2></h3><br></h2></h3><br>The <code>TranscriptFetcher<code> class handles fetching YouTube video transcripts with robust error handling.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [49]:</div>
+<div class="cell-input code">
+from youtube_analyzer.core.transcript_fetcher import TranscriptFetcher
+
+# Initialize the transcript fetcher
+fetcher = TranscriptFetcher()
+
+# Example YouTube video URL - Replace with a video that has captions
+# Good test videos:
+# - TED Talks: https://www.youtube.com/watch?v=c0KYU2j0TM4 (Science of happiness)
+# - Educational content with captions
+video_url = "https://www.youtube.com/watch?v=c0KYU2j0TM4"  # Replace with your desired video URL
+
+print(f"Fetching transcript from: {video_url}")
+print("-" * 80)
+try:
+    transcript_segments = fetcher.fetch_transcript(video_url)
+    
+    print(f"\n✓ Successfully fetched {len(transcript_segments)} transcript segments")
+    print("\nFirst 3 segments:")
+    for i, segment in enumerate(transcript_segments[:3]):
+        print(f"\n[{i+1}] Time: {segment.start:.2f}s - {segment.start + segment.duration:.2f}s")
+        print(f"Text: {segment.text}")
+        
+except Exception as e:
+    print(f"✗ Error fetching transcript: {e}")
+    print("\nNote: Make sure the video has captions/subtitles available")
+    transcript_segments = []
+</div>
+<div class="cell-output">
+Fetching transcript from: https://www.youtube.com/watch?v=c0KYU2j0TM4
+--------------------------------------------------------------------------------
+
+✓ Successfully fetched 409 transcript segments
+
+First 3 segments:
+
+[1] Time: 15.26s - 17.24s
+Text: When I was nine years old,
+
+[2] Time: 17.26s - 19.40s
+Text: I went off to summer camp
+for the first time.
+
+[3] Time: 19.43s - 23.24s
+Text: And my mother packed me a suitcase
+full of books,
+
+✓ Successfully fetched 409 transcript segments
+
+First 3 segments:
+
+[1] Time: 15.26s - 17.24s
+Text: When I was nine years old,
+
+[2] Time: 17.26s - 19.40s
+Text: I went off to summer camp
+for the first time.
+
+[3] Time: 19.43s - 23.24s
+Text: And my mother packed me a suitcase
+full of books,
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>2. Chunker - Semantic Text Chunking</h1></h2></h3><br></h2></h3><br>The <code>ChunkerFactory<code> provides different strategies for splitting text into semantic chunks.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [50]:</div>
+<div class="cell-input code">
+from youtube_analyzer.core.chunker import ChunkerFactory
+
+# Combine transcript segments into full text
+if transcript_segments:
+    full_text = " ".join([seg.text for seg in transcript_segments])
+    # Use chunk_segments for transcript data with timing
+    chunker = ChunkerFactory.create_chunker(
+        method="langchain",
+        chunk_size=500,
+        chunk_overlap=100
+    )
+    chunks = chunker.chunk_segments(transcript_segments)
+    print(f"Full text length: {len(full_text)} characters")
+else:
+    # Use sample text for demonstration
+    full_text = """Artificial intelligence is transforming the world. 
+    Machine learning enables computers to learn from data. 
+    Deep learning uses neural networks with multiple layers. 
+    Natural language processing helps computers understand human language.
+    Computer vision allows machines to interpret visual information."""
+    
+    print(f"Full text length: {len(full_text)} characters")
+    
+    # Create chunker with LangChain method
+    chunker = ChunkerFactory.create_chunker(
+        method="langchain",
+        chunk_size=500,
+        chunk_overlap=100
+    )
+    
+    # For plain text, use chunk_text and wrap in ChunkData manually
+    from youtube_analyzer.models.schemas import ChunkData
+    text_chunks = chunker.chunk_text(full_text)
+    chunks = [
+        ChunkData(
+            text=chunk,
+            chunk_index=i,
+            start_time=0.0,
+            end_time=0.0,
+            metadata={}
+        )
+        for i, chunk in enumerate(text_chunks)
+    ]
+
+print(f"\nCreated {len(chunks)} chunks\n")
+print("First 2 chunks:")
+for i, chunk in enumerate(chunks[:2]):
+    print(f"\n[Chunk {i+1}]")
+    print(f"Text: {chunk.text[:200]}..." if len(chunk.text) &gt; 200 else f"Text: {chunk.text}")
+    print(f"Start time: {chunk.start_time}s, End time: {chunk.end_time}s")
+</div>
+<div class="cell-output">
+Full text length: 18005 characters
+
+Created 44 chunks
+
+First 2 chunks:
+
+[Chunk 1]
+Text: When I was nine years old, I went off to summer camp
+for the first time. And my mother packed me a suitcase
+full of books, which to me seemed like
+a perfectly natural thing to do. Because in my family...
+Start time: 15.26s, End time: 42.117999999999995s
+
+[Chunk 2]
+Text: sitting right next to you, but you are also free to go
+roaming around the adventureland inside your own mind. And I had this idea that camp was going to be
+just like this, but better. (Laughter) I had...
+Start time: 39.26s, End time: 71.23599999999999s
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>3. Embedder - Vector Embedding Generation</h1></h2></h3><br></h2></h3><br>The <code>Embedder<code> class generates vector embeddings using sentence-transformers.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [51]:</div>
+<div class="cell-input code">
+from youtube_analyzer.core.embedder import Embedder
+
+# Initialize embedder
+embedder = Embedder(model_name="all-MiniLM-L6-v2")
+
+print("Generating embeddings...")
+
+# Generate embeddings for chunks
+texts = [chunk.text for chunk in chunks]
+embedding_result = embedder.encode_texts(texts)
+embeddings = embedding_result.embeddings
+
+print(f"\nGenerated {len(embeddings)} embeddings")
+print(f"Embedding dimension: {embedding_result.dimension}")
+print(f"Model used: {embedding_result.model_name}")
+print(f"\nFirst embedding (first 10 values): {embeddings[0][:10]}")
+</div>
+<div class="cell-output">
+Generating embeddings...
+
+Generated 44 embeddings
+Embedding dimension: 384
+Model used: all-MiniLM-L6-v2
+
+First embedding (first 10 values): [0.08945563435554504, -0.018094534054398537, -0.003563137259334326, 0.11281244456768036, 0.0449887178838253, 0.04932912439107895, 0.050185877829790115, -0.030048904940485954, 0.015698527917265892, -0.005386654753237963]
+
+Generated 44 embeddings
+Embedding dimension: 384
+Model used: all-MiniLM-L6-v2
+
+First embedding (first 10 values): [0.08945563435554504, -0.018094534054398537, -0.003563137259334326, 0.11281244456768036, 0.0449887178838253, 0.04932912439107895, 0.050185877829790115, -0.030048904940485954, 0.015698527917265892, -0.005386654753237963]
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>4. VectorRetriever - ChromaDB Storage and Retrieval</h1></h2></h3><br></h2></h3><br>The <code>VectorRetriever<code> class handles storage and similarity-based retrieval using ChromaDB.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [52]:</div>
+<div class="cell-input code">
+from youtube_analyzer.core.retriever import VectorRetriever
+
+# Initialize vector retriever
+retriever = VectorRetriever(
+    persist_directory="./data/demo_chroma_db",
+    collection_name="demo_collection"
+)
+
+# Store chunks with embeddings
+video_id = "demo_video_001"
+print(f"Storing {len(chunks)} chunks in ChromaDB...")
+
+retriever.add_chunks(
+    video_id=video_id,
+    chunks=chunks,
+    embeddings=embeddings
+)
+
+print("\nChunks stored successfully!")
+
+# Retrieve similar chunks
+query = "What is machine learning?"
+print(f"\nSearching for: '{query}'")
+
+# Generate query embedding
+query_embedding_result = embedder.encode_texts([query])
+query_embedding = query_embedding_result.embeddings[0]
+
+# Retrieve top 3 similar chunks
+retrieval_result = retriever.search_similar_chunks(
+    query_embedding=query_embedding,
+    video_id=video_id,
+    n_results=3
+)
+
+similar_chunks = retrieval_result.chunks
+
+print(f"\nFound {len(similar_chunks)} relevant chunks:")
+print(f"Retrieval time: {retrieval_result.retrieval_time:.3f}s")
+for i, chunk in enumerate(similar_chunks):
+    print(f"\n[Result {i+1}] (Similarity: {chunk.similarity_score:.3f})")
+    print(f"Text: {chunk.text[:150]}..." if len(chunk.text) &gt; 150 else f"Text: {chunk.text}")
+</div>
+<div class="cell-output">
+Storing 44 chunks in ChromaDB...
+
+Chunks stored successfully!
+
+Searching for: 'What is machine learning?'
+
+Found 3 relevant chunks:
+Retrieval time: 0.001s
+
+[Result 1] (Similarity: 0.620)
+Text: Artificial intelligence is transforming the world. 
+    Machine learning enables computers to learn from data. 
+    Deep learning uses neural networks...
+
+[Result 2] (Similarity: 0.207)
+Text: for lots of stimulation. And also we have
+this belief system right now that I call the new groupthink, which holds that all creativity
+and all product...
+
+[Result 3] (Similarity: 0.143)
+Text: become such an expert in the first place had he not been too introverted
+to leave the house when he was growing up. Now, of course, this does not mean...
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>5. Summarizer - LLM-based Summarization</h1></h2></h3><br></h2></h3><br>The <code>SummarizerFactory<code> creates summarizers for different LLM providers.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [53]:</div>
+<div class="cell-input code">
+from youtube_analyzer.core.summarizer import SummarizerFactory
+
+# Get LLM provider from environment (default to groq)
+llm_provider = os.getenv("LLM_PROVIDER", "groq")
+
+print(f"Using LLM provider: {llm_provider}\n")
+
+# Create summarizer
+summarizer = SummarizerFactory.create_summarizer(
+    provider=llm_provider,
+    api_key=os.getenv(f"{llm_provider.upper()}_API_KEY")
+)
+
+# Prepare text from retrieved chunks
+text_to_summarize = "\n\n".join([chunk.text for chunk in similar_chunks])
+
+print("Generating summary...\n")
+
+try:
+    summary = summarizer.summarize(
+        text=text_to_summarize,
+        context_chunks=similar_chunks
+    )
+    
+    print("=" * 80)
+    print("SUMMARY")
+    print("=" * 80)
+    print(summary)
+    print("=" * 80)
+    
+except Exception as e:
+    print(f"Error generating summary: {e}")
+    print("\nNote: Make sure you have set up the API key in your .env file")
+</div>
+<div class="cell-output">
+Using LLM provider: groq
+
+Generating summary...
+
+================================================================================
+SUMMARY
+================================================================================
+**Concise Summary**
+
+The video discusses the impact of artificial intelligence on the world, highlighting its various applications such as machine learning, deep learning, natural language processing, and computer vision. However, the main focus of the video shifts to the importance of solitude in a world that increasingly values collaboration and group work. The speaker argues that the current education system, with its emphasis on group projects and pods of desks, may be neglecting the needs of introverted students who require solitude to thrive.
+
+The speaker suggests that the "new groupthink" mentality, which holds that all creativity and productivity comes from collaborative work, may be misguided. They argue that solitude is essential for some people, allowing them to focus, reflect, and recharge. The example of Steve Wozniak, who became an expert in his field partly due to his introverted nature, is cited to illustrate the importance of solitude in achieving success.
+
+The video concludes by emphasizing the transcendent power of solitude, which has been recognized for centuries. The speaker encourages viewers to recognize the value of solitude and to create space for introverted individuals to work and thrive. By acknowledging the importance of solitude, we can foster a more inclusive and productive environment that values both collaboration and individual reflection.
+
+**Main Topics Covered**
+
+1. Artificial Intelligence (AI) and its applications
+2. The importance of solitude in a collaborative world
+3. The impact of the "new groupthink" mentality on education and productivity
+
+**Key Insights or Conclusions**
+
+1. Solitude is essential for some people, allowing them to focus, reflect, and recharge.
+2. The "new groupthink" mentality, which emphasizes collaboration over individual work, may be neglecting the needs of introverted students and individuals.
+3. Recognizing the value of solitude can foster a more inclusive and productive environment that values both collaboration and individual reflection.
+4. The example of Steve Wozniak illustrates the importance of solitude in achieving success and expertise in a particular field.
+================================================================================
+================================================================================
+SUMMARY
+================================================================================
+**Concise Summary**
+
+The video discusses the impact of artificial intelligence on the world, highlighting its various applications such as machine learning, deep learning, natural language processing, and computer vision. However, the main focus of the video shifts to the importance of solitude in a world that increasingly values collaboration and group work. The speaker argues that the current education system, with its emphasis on group projects and pods of desks, may be neglecting the needs of introverted students who require solitude to thrive.
+
+The speaker suggests that the "new groupthink" mentality, which holds that all creativity and productivity comes from collaborative work, may be misguided. They argue that solitude is essential for some people, allowing them to focus, reflect, and recharge. The example of Steve Wozniak, who became an expert in his field partly due to his introverted nature, is cited to illustrate the importance of solitude in achieving success.
+
+The video concludes by emphasizing the transcendent power of solitude, which has been recognized for centuries. The speaker encourages viewers to recognize the value of solitude and to create space for introverted individuals to work and thrive. By acknowledging the importance of solitude, we can foster a more inclusive and productive environment that values both collaboration and individual reflection.
+
+**Main Topics Covered**
+
+1. Artificial Intelligence (AI) and its applications
+2. The importance of solitude in a collaborative world
+3. The impact of the "new groupthink" mentality on education and productivity
+
+**Key Insights or Conclusions**
+
+1. Solitude is essential for some people, allowing them to focus, reflect, and recharge.
+2. The "new groupthink" mentality, which emphasizes collaboration over individual work, may be neglecting the needs of introverted students and individuals.
+3. Recognizing the value of solitude can foster a more inclusive and productive environment that values both collaboration and individual reflection.
+4. The example of Steve Wozniak illustrates the importance of solitude in achieving success and expertise in a particular field.
+================================================================================
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>6. YouTubeAnalyzer - Complete End-to-End Pipeline</h1></h2></h3><br></h2></h3><br>The <code>YouTubeAnalyzer<code> class orchestrates all components for a complete analysis.</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [54]:</div>
+<div class="cell-input code">
+from youtube_analyzer import YouTubeAnalyzer
+from youtube_analyzer.models.schemas import AnalyzerConfig
+
+# Create custom configuration using values from .env
+config = AnalyzerConfig(
+    embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
+    chunking_method=os.getenv("CHUNKING_METHOD", "langchain"),
+    chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),
+    chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
+    llm_provider=os.getenv("LLM_PROVIDER", "groq"),
+    chroma_persist_directory=os.getenv("CHROMA_PERSIST_DIRECTORY", "./data/chroma_db"),
+    collection_name=os.getenv("COLLECTION_NAME", "youtube_transcripts")
+)
+
+# Initialize analyzer
+analyzer = YouTubeAnalyzer(config=config)
+
+print("YouTubeAnalyzer initialized successfully!")
+print("=" * 80)
+print("Configuration:")
+print(f"  - Chunking method: {config.chunking_method}")
+print(f"  - Chunk size: {config.chunk_size}")
+print(f"  - Chunk overlap: {config.chunk_overlap}")
+print(f"  - Embedding model: {config.embedding_model}")
+print(f"  - LLM provider: {config.llm_provider}")
+print(f"  - ChromaDB directory: {config.chroma_persist_directory}")
+print(f"  - Collection name: {config.collection_name}")
+print("=" * 80)
+</div>
+<div class="cell-output">
+YouTubeAnalyzer initialized successfully!
+================================================================================
+Configuration:
+  - Chunking method: langchain
+  - Chunk size: 1000
+  - Chunk overlap: 200
+  - Embedding model: all-MiniLM-L6-v2
+  - LLM provider: groq
+  - ChromaDB directory: ./data/chroma_db
+  - Collection name: youtube_transcripts
+================================================================================
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>##<h1>Analyze a YouTube Video (End-to-End)</p>
+</div>
+<div class="cell code-cell">
+<div class="execution-count">In [59]:</div>
+<div class="cell-input code">
+# Replace with a real YouTube video URL you want to analyze
+# Example: TED Talk or educational video with captions
+youtube_url = "https://www.youtube.com/watch?v=TFnJFaWwlbs"
+
+print(f"Analyzing video: {youtube_url}\n")
+print("=" * 80)
+print("PIPELINE STEPS:")
+print("=" * 80)
+print("  1. Fetch the transcript from YouTube")
+print("  2. Chunk the text semantically")
+print("  3. Generate embeddings for each chunk")
+print("  4. Store embeddings in ChromaDB")
+print("  5. Retrieve most relevant chunks")
+print("  6. Generate comprehensive summary with LLM")
+print("=" * 80)
+print()
+
+try:
+    # Analyze the video (this runs the complete RAG pipeline)
+    print("🔄 Starting analysis...\n")
+    result = analyzer.analyze_video(youtube_url)
+    
+    # Display results
+    print("\n" + "=" * 80)
+    print("✓ VIDEO ANALYSIS COMPLETED SUCCESSFULLY")
+    print("=" * 80)
+    
+    print(f"\n📹 Video Information:")
+    print(f"   Video ID: {result.metadata.video_id}")
+    print(f"   Title: {result.metadata.title or 'N/A'}")
+    print(f"   Duration: {result.metadata.duration:.1f}s" if result.metadata.duration else "   Duration: N/A")
+    print(f"   Language: {result.metadata.language or 'N/A'}")
+    
+    print(f"\n📊 Processing Statistics:")
+    print(f"   Transcript length: {result.metadata.transcript_length:,} characters" if result.metadata.transcript_length else "   Transcript length: N/A")
+    print(f"   Number of chunks created: {result.metadata.chunk_count or 0}")
+    print(f"   Chunks used for context: {len(result.context_chunks) if result.context_chunks else 0}")
+    print(f"   Analysis timestamp: {result.analysis_timestamp}")
+    
+    print(f"\n⚙️  Configuration Used:")
+    print(f"   LLM Provider: {result.config_used.get('llm_provider', 'N/A')}")
+    print(f"   Embedding Model: {result.config_used.get('embedding_model', 'N/A')}")
+    print(f"   Chunking Method: {result.config_used.get('chunking_method', 'N/A')}")
+    
+    print("\n" + "=" * 80)
+    print("✅ Analysis complete! Results stored in ChromaDB for future searches.")
+    print("=" * 80)
+    
+    print("\n" + "-" * 80)
+    print("📝 SUMMARY")
+    print("-" * 80)
+    print(result.summary)
+    
+    if result.key_points:
+        print("\n" + "-" * 80)
+        print("🔑 KEY POINTS")
+        print("-" * 80)
+        for i, point in enumerate(result.key_points, 1):
+            print(f"{i}. {point}")
+    
+except Exception as e:
+    import traceback
+    print("\n" + "=" * 80)
+    print("✗ ERROR ANALYZING VIDEO")
+    print("=" * 80)
+    print(f"Error: {e}")
+    print("\n⚠️  Please check:")
+    print("  • The YouTube URL is valid")
+    print("  • The video has captions/subtitles available")
+    print("  • Your API keys are correctly set in the .env file")
+    print("  • All dependencies are installed")
+    print("=" * 80)
+    print("\nFull traceback:")
+    traceback.print_exc()
+</div>
+<div class="cell-output">
+Analyzing video: https://www.youtube.com/watch?v=TFnJFaWwlbs
+
+================================================================================
+PIPELINE STEPS:
+================================================================================
+  1. Fetch the transcript from YouTube
+  2. Chunk the text semantically
+  3. Generate embeddings for each chunk
+  4. Store embeddings in ChromaDB
+  5. Retrieve most relevant chunks
+  6. Generate comprehensive summary with LLM
+================================================================================
+
+🔄 Starting analysis...
+
+
+================================================================================
+✓ VIDEO ANALYSIS COMPLETED SUCCESSFULLY
+================================================================================
+
+📹 Video Information:
+   Video ID: TFnJFaWwlbs
+   Title: N/A
+   Duration: 70.6s
+   Language: en
+
+📊 Processing Statistics:
+   Transcript length: 642 characters
+   Number of chunks created: 1
+   Chunks used for context: 1
+   Analysis timestamp: 2025-11-09T18:15:21.507927
+
+⚙️  Configuration Used:
+   LLM Provider: groq
+   Embedding Model: all-MiniLM-L6-v2
+   Chunking Method: langchain
+
+================================================================================
+✅ Analysis complete! Results stored in ChromaDB for future searches.
+================================================================================
+
+--------------------------------------------------------------------------------
+📝 SUMMARY
+--------------------------------------------------------------------------------
+**Concise Summary**
+
+The speaker, likely Jack Ma, founder of Alibaba, discusses the importance of hard work and thinking differently to achieve success. He mentions that when everyone says something is going to be tough, he becomes interested in finding a different way to approach the challenge. Ma emphasizes that nothing is easy or free, and to be successful, one must be willing to pay the price, think differently, and work hard.
+
+Ma shares his personal experience, stating that Alibaba has taken 18 years to reach its current size, and while the company has been lucky, its success is also a result of hard work. He notes that he and his team have worked tirelessly, often sacrificing sleep and comfort, to achieve their goals. For example, Ma traveled 806 hours last year, demonstrating his dedication to his work. He emphasizes that his team has worked like a 70-year-old company, day and night, to achieve success.
+
+The speaker's message is clear: success requires effort, dedication, and a willingness to think outside the box. He encourages listeners to embrace challenges and find new ways to overcome them, rather than being deterred by obstacles. By sharing his own experiences and the story of Alibaba's success, Ma inspires others to work hard and strive for their goals, even in the face of adversity.
+
+**Main Topics Covered**
+
+1. The importance of hard work and dedication in achieving success
+2. Thinking differently and finding new ways to approach challenges
+3. The story of Alibaba's success and the speaker's personal experience
+
+**Key Insights or Conclusions**
+
+1. Success is not easy or free; it requires hard work and dedication.
+2. Thinking differently and finding new ways to approach challenges is crucial for success.
+3. Embracing challenges and being willing to pay the price is essential for achieving goals.
+4. Hard work and sacrifice are necessary for success, as demonstrated by the speaker's personal experience and the story of Alibaba's success.
+
+--------------------------------------------------------------------------------
+🔑 KEY POINTS
+--------------------------------------------------------------------------------
+1. The speaker is drawn to challenges and tough questions, and seeks to find alternative solutions to overcome them.
+2. To be successful, one must think differently and be willing to put in the effort required to achieve their goals.
+3. Nothing in life is free or easy, and success requires hard work and dedication.
+4. The speaker cites Alibaba's 18-year journey to its current size as an example of the hard work and perseverance required to achieve success.
+5. The speaker emphasizes the importance of paying the price for success, implying that sacrifices must be made in order to achieve one's goals.
+6. The speaker and their team have worked extremely hard over the years, often sacrificing rest and leisure time in order to drive their business forward.
+7. The speaker believes that their team's hard work and dedication have been key factors in Alibaba's success, and that they have effectively compressed 70 years of work into just 18 years.
+
+================================================================================
+✓ VIDEO ANALYSIS COMPLETED SUCCESSFULLY
+================================================================================
+
+📹 Video Information:
+   Video ID: TFnJFaWwlbs
+   Title: N/A
+   Duration: 70.6s
+   Language: en
+
+📊 Processing Statistics:
+   Transcript length: 642 characters
+   Number of chunks created: 1
+   Chunks used for context: 1
+   Analysis timestamp: 2025-11-09T18:15:21.507927
+
+⚙️  Configuration Used:
+   LLM Provider: groq
+   Embedding Model: all-MiniLM-L6-v2
+   Chunking Method: langchain
+
+================================================================================
+✅ Analysis complete! Results stored in ChromaDB for future searches.
+================================================================================
+
+--------------------------------------------------------------------------------
+📝 SUMMARY
+--------------------------------------------------------------------------------
+**Concise Summary**
+
+The speaker, likely Jack Ma, founder of Alibaba, discusses the importance of hard work and thinking differently to achieve success. He mentions that when everyone says something is going to be tough, he becomes interested in finding a different way to approach the challenge. Ma emphasizes that nothing is easy or free, and to be successful, one must be willing to pay the price, think differently, and work hard.
+
+Ma shares his personal experience, stating that Alibaba has taken 18 years to reach its current size, and while the company has been lucky, its success is also a result of hard work. He notes that he and his team have worked tirelessly, often sacrificing sleep and comfort, to achieve their goals. For example, Ma traveled 806 hours last year, demonstrating his dedication to his work. He emphasizes that his team has worked like a 70-year-old company, day and night, to achieve success.
+
+The speaker's message is clear: success requires effort, dedication, and a willingness to think outside the box. He encourages listeners to embrace challenges and find new ways to overcome them, rather than being deterred by obstacles. By sharing his own experiences and the story of Alibaba's success, Ma inspires others to work hard and strive for their goals, even in the face of adversity.
+
+**Main Topics Covered**
+
+1. The importance of hard work and dedication in achieving success
+2. Thinking differently and finding new ways to approach challenges
+3. The story of Alibaba's success and the speaker's personal experience
+
+**Key Insights or Conclusions**
+
+1. Success is not easy or free; it requires hard work and dedication.
+2. Thinking differently and finding new ways to approach challenges is crucial for success.
+3. Embracing challenges and being willing to pay the price is essential for achieving goals.
+4. Hard work and sacrifice are necessary for success, as demonstrated by the speaker's personal experience and the story of Alibaba's success.
+
+--------------------------------------------------------------------------------
+🔑 KEY POINTS
+--------------------------------------------------------------------------------
+1. The speaker is drawn to challenges and tough questions, and seeks to find alternative solutions to overcome them.
+2. To be successful, one must think differently and be willing to put in the effort required to achieve their goals.
+3. Nothing in life is free or easy, and success requires hard work and dedication.
+4. The speaker cites Alibaba's 18-year journey to its current size as an example of the hard work and perseverance required to achieve success.
+5. The speaker emphasizes the importance of paying the price for success, implying that sacrifices must be made in order to achieve one's goals.
+6. The speaker and their team have worked extremely hard over the years, often sacrificing rest and leisure time in order to drive their business forward.
+7. The speaker believes that their team's hard work and dedication have been key factors in Alibaba's success, and that they have effectively compressed 70 years of work into just 18 years.
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>Advanced Features</h1></h2></h3><br></h2></h3><br>##<h1>Semantic Search Across Videos</p>
+</div>
+<div class="cell code-cell">
+<div class="cell-input code">
+# Search for specific topics across all analyzed videos
+search_query = "machine learning applications"
+
+print(f"Searching for: '{search_query}'\n")
+
+try:
+    search_results = analyzer.search(search_query, top_k=5)
+    
+    print(f"Found {len(search_results)} relevant segments:\n")
+    
+    for i, chunk in enumerate(search_results, 1):
+        print(f"[{i}] Video ID: {chunk.metadata.get('video_id', 'N/A')}")
+        print(f"    Time: {chunk.start_time}s - {chunk.end_time}s")
+        print(f"    Text: {chunk.text[:200]}...\n")
+        
+except Exception as e:
+    print(f"Error during search: {e}")
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>##<h1>Get Analysis Statistics</p>
+</div>
+<div class="cell code-cell">
+<div class="cell-input code">
+# Get statistics about analyzed videos
+try:
+    stats = analyzer.get_stats()
+    
+    print("Analysis Statistics:")
+    print("=" * 50)
+    print(f"Total videos analyzed: {stats.get('total_videos', 0)}")
+    print(f"Total chunks stored: {stats.get('total_chunks', 0)}")
+    print(f"Collection name: {stats.get('collection_name', 'N/A')}")
+    print("=" * 50)
+    
+except Exception as e:
+    print(f"Error getting statistics: {e}")
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>##<h1>Batch Processing Multiple Videos</p>
+</div>
+<div class="cell code-cell">
+<div class="cell-input code">
+# Analyze multiple videos
+video_urls = [
+    "https://www.youtube.com/watch?v=VIDEO_ID_1",
+    "https://www.youtube.com/watch?v=VIDEO_ID_2",
+    # Add more URLs as needed
+]
+
+print(f"Processing {len(video_urls)} videos...\n")
+
+results = []
+for i, url in enumerate(video_urls, 1):
+    print(f"[{i}/{len(video_urls)}] Analyzing: {url}")
+    try:
+        result = analyzer.analyze_video(url)
+        results.append(result)
+        print(f"  ✓ Success - {result.num_chunks} chunks created\n")
+    except Exception as e:
+        print(f"  ✗ Failed: {e}\n")
+
+print(f"\nSuccessfully analyzed {len(results)}/{len(video_urls)} videos")
+</div>
+</div>
+<div class="cell markdown-cell">
+<p>#<h1>Summary</h1></h2></h3><br></h2></h3><br>This notebook demonstrated all key components of the youtube-video-analyser project:</h2></h3><br></h2></h3><br>1. **TranscriptFetcher** - Robust YouTube transcript extraction with error handling</h2></h3><br>2. **Chunker** - Flexible semantic text chunking (LangChain or spaCy)</h2></h3><br>3. **Embedder** - Vector embeddings using sentence-transformers</h2></h3><br>4. **VectorRetriever** - ChromaDB for persistent storage and similarity search</h2></h3><br>5. **Summarizer** - LLM-based summarization with multiple provider options</h2></h3><br>6. **YouTubeAnalyzer** - Complete orchestrated RAG pipeline</h2></h3><br></h2></h3><br>##<h1>Next Steps:</h2></h3><br></h2></h3><br>- Configure your <code>.env<code> file with API keys</h2></h3><br>- Try analyzing different YouTube videos</h2></h3><br>- Experiment with different chunking strategies and sizes</h2></h3><br>- Use semantic search to find specific topics across videos</h2></h3><br>- Explore the CLI interface for quick analyses</h2></h3><br></h2></h3><br>---</h2></h3><br></h2></h3><br>**Note**: This notebook uses the installed <code>youtube_analyzer<code> package. For a standalone version, see <code>youtube_analyzer_interactive.ipynb<code>.</p>
+</div>
+
+    </div>
+</body>
+</html>

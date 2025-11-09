@@ -99,13 +99,16 @@ class VectorRetriever:
                 chunk_id = f"{video_id}_{chunk.chunk_index}_{i}"
                 ids.append(chunk_id)
                 
+                # ChromaDB doesn't accept None values, so filter them out
                 metadata = {
                     "video_id": video_id,
-                    "chunk_index": chunk.chunk_index,
-                    "start_time": chunk.start_time,
-                    "end_time": chunk.end_time,
+                    "chunk_index": int(chunk.chunk_index) if chunk.chunk_index is not None else 0,
+                    "start_time": float(chunk.start_time) if chunk.start_time is not None else 0.0,
+                    "end_time": float(chunk.end_time) if chunk.end_time is not None else 0.0,
                     "text_length": len(chunk.text)
                 }
+                # Remove any remaining None values
+                metadata = {k: v for k, v in metadata.items() if v is not None}
                 metadatas.append(metadata)
             
             # Add to collection

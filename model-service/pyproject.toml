@@ -13,6 +13,18 @@ pydantic = "^2.0.0"
 numpy = "^1.24.0"
 pillow = "^10.0.0"
 python-multipart = "^0.0.6"
+# YouTube Analyzer dependencies
+youtube-transcript-api = "^0.6.0"
+langchain = "^0.0.350"
+langchain-community = "^0.0.10"
+langchain-text-splitters = "^0.0.1"
+chromadb = "^0.4.15"
+sentence-transformers = "^2.2.2"
+torch = "^2.1.0"
+groq = "^0.4.0"
+openai = "^1.0.0"
+pandas = "^2.0.0"
+tqdm = "^4.66.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

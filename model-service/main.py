@@ -85,9 +85,47 @@ class ModelInfo(BaseModel):
     version: str
     status: str
 
+# YouTube Analyzer Models
+class YouTubeAnalysisRequest(BaseModel):
+    url: str
+    query: Optional[str] = None
+    max_chunks: Optional[int] = 8
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                "query": "What are the main topics discussed?",
+                "max_chunks": 8
+            }
+        }
+
+class YouTubeAnalysisResponse(BaseModel):
+    summary: str
+    key_points: List[str]
+    video_id: str
+    duration: Optional[float]
+    chunk_count: int
+    analysis_timestamp: str
+    context_chunks: List[str] = []
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "summary": "This video discusses various technical concepts...",
+                "key_points": ["Key point 1", "Key point 2"],
+                "video_id": "dQw4w9WgXcQ",
+                "duration": 212.0,
+                "chunk_count": 15,
+                "analysis_timestamp": "2024-11-05T10:30:00",
+                "context_chunks": ["Relevant content 1", "Relevant content 2"]
+            }
+        }
+
 class ModelsStatusResponse(BaseModel):
     forecasting: ModelInfo
     object_detection: ModelInfo
+    youtube_analyzer: ModelInfo
     last_updated: str
 
 # Model Service Class
@@ -95,10 +133,11 @@ class ModelService:
     def __init__(self):
         self.forecasting_model = None
         self.detection_model = None
+        self.youtube_analyzer = None
         self.load_models()
     
     def load_models(self):
-        """Load both models from pickle files"""
+        """Load all models from pickle files"""
         try:
             # Load forecasting model
             forecasting_path = MODELS_PATH / "forecasting_model.pkl"
@@ -117,6 +156,19 @@ class ModelService:
                 print("✓ Object detection model loaded")
             else:
                 print("⚠ Object detection model file not found")
+            
+            # Load YouTube analyzer
+            try:
+                import sys
+                sys.path.append(str(MODELS_PATH))
+                from youtube_analyzer_standalone import create_youtube_analyzer_service
+                
+                # Create YouTube analyzer service
+                self.youtube_analyzer = create_youtube_analyzer_service()
+                print("✓ YouTube analyzer service initialized")
+            except Exception as e:
+                print(f"⚠ YouTube analyzer initialization failed: {e}")
+                self.youtube_analyzer = None
                 
         except Exception as e:
             print(f"Error loading models: {e}")
@@ -196,6 +248,30 @@ class ModelService:
             'inference_time': round(np.random.uniform(0.02, 0.08), 3),
             'detection_time': datetime.now().isoformat()
         }
+    
+    def analyze_youtube_video(self, url: str, query: Optional[str] = None, max_chunks: Optional[int] = None) -> dict:
+        """Analyze a YouTube video using the YouTube analyzer service"""
+        if not self.youtube_analyzer:
+            raise HTTPException(status_code=503, detail="YouTube analyzer service not available")
+        
+        try:
+            # Perform video analysis
+            result = self.youtube_analyzer.analyze_video(url, query, max_chunks)
+            
+            # Convert result to dictionary format
+            return {
+                'summary': result.summary,
+                'key_points': result.key_points,
+                'video_id': result.metadata.video_id,
+                'duration': result.metadata.duration,
+                'chunk_count': result.metadata.chunk_count,
+                'analysis_timestamp': result.analysis_timestamp.isoformat(),
+                'context_chunks': [chunk.text[:100] + "..." if len(chunk.text) > 100 else chunk.text 
+                                 for chunk in result.context_chunks]
+            }
+            
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"YouTube analysis failed: {str(e)}")
 
 # Initialize model service
 model_service = ModelService()
@@ -210,6 +286,7 @@ async def root():
         "endpoints": {
             "temperature_prediction": "/predict/temperature",
             "object_detection": "/detect/objects",
+            "youtube_analysis": "/analyze/youtube",
             "health": "/health",
             "models": "/models"
         }
@@ -220,13 +297,15 @@ async def health_check():
     """Health check endpoint"""
     forecasting_status = "available" if model_service.forecasting_model else "unavailable"
     detection_status = "available" if model_service.detection_model else "unavailable"
+    youtube_status = "available" if model_service.youtube_analyzer else "unavailable"
     
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "models": {
             "forecasting": forecasting_status,
-            "object_detection": detection_status
+            "object_detection": detection_status,
+            "youtube_analyzer": youtube_status
         }
     }
 
@@ -240,20 +319,33 @@ async def get_models_info():
             with open(registry_path, 'r') as f:
                 registry = json.load(f)
             
+            # Find YouTube analyzer in registry
+            youtube_model = None
+            for model in registry.get('models', []):
+                if model.get('name') == 'youtube_video_analyzer':
+                    youtube_model = model
+                    break
+            
             return ModelsStatusResponse(
                 forecasting=ModelInfo(
-                    model_type=registry['forecasting']['type'],
+                    model_type="temperature_forecasting",
                     algorithm="Seasonal_Pattern_Model",
-                    version=registry['forecasting']['version'],
-                    status=registry['forecasting']['status']
+                    version="1.0.0",
+                    status="available" if model_service.forecasting_model else "unavailable"
                 ),
                 object_detection=ModelInfo(
-                    model_type=registry['object_detection']['type'],
+                    model_type="object_detection",
                     algorithm="YOLOv8n_Mock",
-                    version=registry['object_detection']['version'],
-                    status=registry['object_detection']['status']
+                    version="1.0.0",
+                    status="available" if model_service.detection_model else "unavailable"
                 ),
-                last_updated=registry['last_updated']
+                youtube_analyzer=ModelInfo(
+                    model_type=youtube_model.get('type', 'nlp_analysis') if youtube_model else "nlp_analysis",
+                    algorithm="RAG_Pipeline",
+                    version=youtube_model.get('version', '1.0.0') if youtube_model else "1.0.0",
+                    status="available" if model_service.youtube_analyzer else "unavailable"
+                ),
+                last_updated=datetime.now().isoformat()
             )
         else:
             return ModelsStatusResponse(
@@ -265,6 +357,12 @@ async def get_models_info():
                 ),
                 object_detection=ModelInfo(
                     model_type="object_detection", 
+                    algorithm="Unknown",
+                    version="1.0.0",
+                    status="unknown"
+                ),
+                youtube_analyzer=ModelInfo(
+                    model_type="nlp_analysis",
                     algorithm="Unknown",
                     version="1.0.0",
                     status="unknown"
@@ -310,6 +408,22 @@ async def detect_objects(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Detection error: {str(e)}")
+
+@app.post("/analyze/youtube", response_model=YouTubeAnalysisResponse)
+async def analyze_youtube_video(request: YouTubeAnalysisRequest):
+    """Analyze a YouTube video using the YouTube analyzer service"""
+    try:
+        # Get analysis result
+        result = model_service.analyze_youtube_video(
+            url=request.url,
+            query=request.query,
+            max_chunks=request.max_chunks
+        )
+        
+        return YouTubeAnalysisResponse(**result)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"YouTube analysis error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
