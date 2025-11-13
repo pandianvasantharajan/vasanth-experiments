@@ -1,33 +1,51 @@
-# Use Python 3.12 full image (includes build tools)
-FROM python:3.12
+# Use Python 3.13 slim image
+FROM python:3.13-slim
 
 # Set working directory
 WORKDIR /app
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/youtube-video-analyser-model/src
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV TOKENIZERS_PARALLELISM=false
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    git \
+    build-essential \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements-simple.txt ./
+COPY model-service/requirements.txt ./
 
-# Install Python dependencies (skip system dependencies for now)
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements-simple.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Copy youtube-video-analyser-model source (needed for the wrapper)
+COPY youtube-video-analyser-model/src /app/youtube-video-analyser-model/src
+
+# Copy model-service application code
+COPY model-service/main.py .
+COPY model-service/youtube_analyzer_wrapper.py .
+
+# Copy all pickle models from shared-models
+COPY shared-models/*.pkl ./
 
 # Create necessary directories
-RUN mkdir -p /app/models /app/results
+RUN mkdir -p /app/data/youtube_chroma_db /app/models
 
 # Expose port
 EXPOSE 8000
 
-# Health check (simplified without curl)
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
 
 # Run the application
-CMD ["uvicorn", "main-docker:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

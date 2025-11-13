@@ -10,6 +10,11 @@ import os
 from pathlib import Path
 import io
 import base64
+import sys
+
+# Add youtube_analyzer_wrapper to imports
+sys.path.insert(0, str(Path(__file__).parent))
+from youtube_analyzer_wrapper import YouTubeAnalyzerWrapper
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -29,6 +34,9 @@ app.add_middleware(
 
 # Path to shared models
 MODELS_PATH = Path("/Users/vasantharajanpandian/my-development/zero-development/vasanth-experiments/shared-models")
+
+# Also check local model-service directory for models
+LOCAL_MODELS_PATH = Path(__file__).parent
 
 # Request/Response Models
 class TemperaturePredictionRequest(BaseModel):
@@ -102,6 +110,7 @@ class YouTubeAnalysisRequest(BaseModel):
 
 class YouTubeAnalysisResponse(BaseModel):
     summary: str
+    raw_text: str
     key_points: List[str]
     video_id: str
     duration: Optional[float]
@@ -113,12 +122,13 @@ class YouTubeAnalysisResponse(BaseModel):
         schema_extra = {
             "example": {
                 "summary": "This video discusses various technical concepts...",
+                "raw_text": "Full transcript text from the video...",
                 "key_points": ["Key point 1", "Key point 2"],
                 "video_id": "dQw4w9WgXcQ",
                 "duration": 212.0,
                 "chunk_count": 15,
                 "analysis_timestamp": "2024-11-05T10:30:00",
-                "context_chunks": ["Relevant content 1", "Relevant content 2"]
+                "context_chunks": []
             }
         }
 
@@ -157,18 +167,40 @@ class ModelService:
             else:
                 print("⚠ Object detection model file not found")
             
-            # Load YouTube analyzer
-            try:
-                import sys
-                sys.path.append(str(MODELS_PATH))
-                from youtube_analyzer_standalone import create_youtube_analyzer_service
-                
-                # Create YouTube analyzer service
-                self.youtube_analyzer = create_youtube_analyzer_service()
-                print("✓ YouTube analyzer service initialized")
-            except Exception as e:
-                print(f"⚠ YouTube analyzer initialization failed: {e}")
-                self.youtube_analyzer = None
+            # Load YouTube analyzer from pickle
+            # Try local directory first, then shared models
+            youtube_path = LOCAL_MODELS_PATH / "youtube_analyzer.pkl"
+            if not youtube_path.exists():
+                youtube_path = MODELS_PATH / "youtube_analyzer.pkl"
+            
+            if youtube_path.exists():
+                try:
+                    # Import the wrapper class first
+                    from youtube_analyzer_wrapper import YouTubeAnalyzerWrapper
+                    
+                    with open(youtube_path, 'rb') as f:
+                        youtube_data = pickle.load(f)
+                        self.youtube_analyzer = youtube_data['model']
+                    print(f"✓ YouTube analyzer model loaded from: {youtube_path}")
+                except Exception as e:
+                    print(f"⚠ YouTube analyzer loading error: {e}")
+                    # Try loading directly without pickle
+                    try:
+                        from youtube_analyzer_wrapper import YouTubeAnalyzerWrapper
+                        self.youtube_analyzer = YouTubeAnalyzerWrapper()
+                        print("✓ YouTube analyzer initialized directly")
+                    except Exception as e2:
+                        print(f"⚠ YouTube analyzer direct init failed: {e2}")
+                        self.youtube_analyzer = None
+            else:
+                print("⚠ YouTube analyzer pickle file not found, trying direct initialization")
+                try:
+                    from youtube_analyzer_wrapper import YouTubeAnalyzerWrapper
+                    self.youtube_analyzer = YouTubeAnalyzerWrapper()
+                    print("✓ YouTube analyzer initialized directly")
+                except Exception as e:
+                    print(f"⚠ YouTube analyzer initialization failed: {e}")
+                    self.youtube_analyzer = None
                 
         except Exception as e:
             print(f"Error loading models: {e}")
@@ -255,19 +287,20 @@ class ModelService:
             raise HTTPException(status_code=503, detail="YouTube analyzer service not available")
         
         try:
-            # Perform video analysis
-            result = self.youtube_analyzer.analyze_video(url, query, max_chunks)
+            # Perform video analysis using the pickle model
+            # The wrapper returns: {summary, raw_text, video_id, key_points, metadata}
+            result = self.youtube_analyzer.analyze(url)
             
-            # Convert result to dictionary format
+            # Convert result to API response format
             return {
-                'summary': result.summary,
-                'key_points': result.key_points,
-                'video_id': result.metadata.video_id,
-                'duration': result.metadata.duration,
-                'chunk_count': result.metadata.chunk_count,
-                'analysis_timestamp': result.analysis_timestamp.isoformat(),
-                'context_chunks': [chunk.text[:100] + "..." if len(chunk.text) > 100 else chunk.text 
-                                 for chunk in result.context_chunks]
+                'summary': result['summary'],
+                'raw_text': result['raw_text'],
+                'key_points': result['key_points'],
+                'video_id': result['video_id'],
+                'duration': result['metadata'].get('duration'),
+                'chunk_count': result['metadata'].get('chunk_count', 0),
+                'analysis_timestamp': result['metadata'].get('analysis_timestamp', datetime.now().isoformat()),
+                'context_chunks': []  # Can extract from raw_text if needed
             }
             
         except Exception as e:
