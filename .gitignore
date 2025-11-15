@@ -64,6 +64,10 @@ yarn-error.log*
 !pyproject.toml
 !*.config.json
 
+# Data and images directories
+data/
+images/
+
 # Results and outputs
 */results/
 */output/
